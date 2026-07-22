@@ -3,46 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroGlobal - Book Flights Live</title>
+    <title>AeroGlobal | Premium International Flight Portal</title>
+    <!-- Leaflet World Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f7f6; margin: 0; text-align: center; }
-        header { background: #0a2540; color: white; padding: 20px; font-size: 24px; font-weight: bold; }
-        .box { background: white; max-width: 400px; margin: 40px auto; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input, button { width: 90%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        button { background: #00d4b1; border: none; font-weight: bold; cursor: pointer; color: #0a2540; font-size: 16px; }
-        button:hover { background: #00b89b; }
-        #result { margin-top: 15px; font-size: 14px; }
+        :root {
+            --primary: #0a2540;
+            --accent: #00d4b1;
+            --secondary: #635bff;
+            --bg: #f8f9fa;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+        body { background: var(--bg); color: #2a2a2a; }
+
+        /* Navigation Bar */
+        nav {
+            background: var(--primary);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
+        .nav-links button {
+            background: var(--accent);
+            color: var(--primary);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        /* Hero Banner & Search Card */
+        .hero {
+            background: linear-gradient(rgba(10, 37, 64, 0.75), rgba(10, 37, 64, 0.85)), url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 60px 5% 80px 5%;
+            text-align: center;
+        }
+
+        .hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 10px; }
+        .hero p { font-size: 16px; opacity: 0.9; margin-bottom: 30px; }
+
+        .search-card {
+            background: white;
+            max-width: 950px;
+            margin: 0 auto;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            text-align: left;
+            color: #333;
+        }
+
+        .input-group label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #666; margin-bottom: 5px; }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .btn-search {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            grid-column: span 1;
+            align-self: end;
+            height: 45px;
+        }
+
+        /* Map & Live Radar */
+        .section-container { max-width: 1100px; margin: 50px auto; padding: 0 20px; }
+        .section-title { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 15px; }
+
+        #map { height: 380px; width: 100%; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+
+        /* Admin / Booking History Table */
+        .admin-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f1f5f9; color: var(--primary); font-weight: 700; }
+
+        /* Live Chat Widget */
+        .chat-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 14px 22px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(99, 91, 255, 0.4);
+            z-index: 999;
+        }
+
+        .chat-box {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 320px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            z-index: 999;
+            overflow: hidden;
+        }
+
+        .chat-header { background: var(--primary); color: white; padding: 12px 15px; font-weight: bold; font-size: 14px; }
+        .chat-body { height: 220px; padding: 12px; overflow-y: auto; font-size: 13px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; font-size: 12px; }
+        .msg.bot { background: #f0f0f0; align-self: flex-start; }
+        .msg.user { background: var(--secondary); color: white; align-self: flex-end; }
+        .chat-footer { display: flex; border-top: 1px solid #eee; }
+        .chat-footer input { flex: 1; border: none; padding: 10px; outline: none; }
+        .chat-footer button { background: var(--accent); border: none; padding: 10px 15px; font-weight: bold; cursor: pointer; }
+
+        #status-msg { margin-top: 15px; text-align: center; font-weight: bold; font-size: 15px; }
     </style>
 </head>
 <body>
 
-    <header>✈️ AeroGlobal Flight Portal</header>
+    <nav>
+        <div class="logo">✈️ AeroGlobal Airlines</div>
+        <div class="nav-links">
+            <button onclick="scrollToSearch()">Book Flight</button>
+        </div>
+    </nav>
 
-    <div class="box">
-        <h2>Book a Flight</h2>
-        <input type="email" id="email" placeholder="Your Email Address">
-        <input type="text" id="from" placeholder="From (e.g. Lagos)">
-        <input type="text" id="to" placeholder="To (e.g. London)">
-        <input type="date" id="date">
-        <button onclick="submitBooking()">Book Flight Now</button>
-        <p id="result"></p>
+    <div class="hero">
+        <h1>Fly Everywhere in Real-Time</h1>
+        <p>Book international flights instantly with live tracking and digital ticket confirmation.</p>
+
+        <div class="search-card" id="search-box">
+            <div class="input-group">
+                <label>Passenger Email</label>
+                <input type="email" id="email" placeholder="name@example.com">
+            </div>
+            <div class="input-group">
+                <label>From (Origin)</label>
+                <input type="text" id="from" placeholder="e.g. Lagos (LOS)">
+            </div>
+            <div class="input-group">
+                <label>To (Destination)</label>
+                <input type="text" id="to" placeholder="e.g. London (LHR)">
+            </div>
+            <div class="input-group">
+                <label>Departure Date</label>
+                <input type="date" id="date">
+            </div>
+            <button class="btn-search" onclick="submitBooking()">Book Flight Now</button>
+        </div>
+
+        <p id="status-msg"></p>
     </div>
 
+    <div class="section-container">
+        <h2 class="section-title">🌍 Live Global Flight Radar</h2>
+        <div id="map"></div>
+
+        <div class="admin-box">
+            <h2 class="section-title">📋 Live Booking Receipts & Admin Logs</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Booking Code</th>
+                        <th>Passenger</th>
+                        <th>Route</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="ticket-table">
+                    <tr>
+                        <td><b>AG-882190</b></td>
+                        <td>holamieazy@gmail.com</td>
+                        <td>Lagos ➔ London</td>
+                        <td>2026-07-25</td>
+                        <td><span style="color: green; font-weight: bold;">Confirmed</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Live Chat Widget -->
+    <button class="chat-toggle" onclick="toggleChat()">💬 Live Support</button>
+    <div class="chat-box" id="chat-box">
+        <div class="chat-header">AeroGlobal Live Support</div>
+        <div class="chat-body" id="chat-body">
+            <div class="msg bot">Hello! How can we assist you with your flight booking today?</div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="chat-input" placeholder="Ask a question...">
+            <button onclick="sendChat()">Send</button>
+        </div>
+    </div>
+
+    <!-- Leaflet.js Script for World Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // World Map Initialization
+        const map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Add dummy live flight markers on map
+        L.marker([6.5244, 3.3792]).addTo(map).bindPopup("<b>Flight AG-101</b><br>Lagos ➔ London");
+        L.marker([51.5074, -0.1278]).addTo(map).bindPopup("<b>Flight AG-204</b><br>London ➔ New York");
+
+        function toggleChat() {
+            const box = document.getElementById('chat-box');
+            box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            if(!input.value.trim()) return;
+            const body = document.getElementById('chat-body');
+            body.innerHTML += `<div class="msg user">${input.value}</div>`;
+            const userMsg = input.value;
+            input.value = '';
+
+            setTimeout(() => {
+                body.innerHTML += `<div class="msg bot">Thank you for inquiring about "${userMsg}". An agent will update your flight ticket details shortly.</div>`;
+                body.scrollTop = body.scrollHeight;
+            }, 1000);
+        }
+
+        function scrollToSearch() {
+            document.getElementById('search-box').scrollIntoView({ behavior: 'smooth' });
+        }
+
         async function submitBooking() {
             const email = document.getElementById('email').value;
             const from = document.getElementById('from').value;
             const to = document.getElementById('to').value;
             const date = document.getElementById('date').value;
-            const result = document.getElementById('result');
+            const statusMsg = document.getElementById('status-msg');
 
-            if(!email || !from || !to) {
-                alert('Please fill in all details!');
+            if(!email || !from || !to || !date) {
+                alert('Please fill out all flight booking fields.');
                 return;
             }
 
-            result.style.color = "#0a2540";
-            result.innerText = "Processing booking & sending notifications...";
+            statusMsg.style.color = "#00d4b1";
+            statusMsg.innerText = "⏳ Processing booking with backend server & sending email tickets...";
 
             try {
                 const response = await fetch('https://my-flight-website.onrender.com/book', {
@@ -54,15 +284,26 @@
                 const data = await response.json();
 
                 if(data.success) {
-                    result.style.color = "green";
-                    result.innerHTML = `<strong>Success!</strong><br>Ticket Code: <b>${data.code}</b><br>Check your inbox!`;
+                    statusMsg.style.color = "#00d4b1";
+                    statusMsg.innerHTML = `✅ <b>Booking Confirmed!</b> Ticket Reference: <b>${data.code}</b>. Confirmation sent to ${email} & holamieazy@gmail.com!`;
+
+                    // Dynamically update admin table below
+                    const table = document.getElementById('ticket-table');
+                    const newRow = `<tr>
+                        <td><b>${data.code}</b></td>
+                        <td>${email}</td>
+                        <td>${from} ➔ ${to}</td>
+                        <td>${date}</td>
+                        <td><span style="color: green; font-weight: bold;">Confirmed</span></td>
+                    </tr>`;
+                    table.innerHTML = newRow + table.innerHTML;
                 } else {
-                    result.style.color = "red";
-                    result.innerText = "Error booking flight: " + (data.error || "Please try again.");
+                    statusMsg.style.color = "#ff6b6b";
+                    statusMsg.innerText = "❌ Booking failed: " + (data.error || "Please check backend configuration.");
                 }
             } catch(err) {
-                result.style.color = "red";
-                result.innerText = "Failed to connect to backend server. Make sure your Render service is live!";
+                statusMsg.style.color = "#ff6b6b";
+                statusMsg.innerText = "❌ Could not connect to backend server. Make sure your Render service is active.";
             }
         }
     </script>
